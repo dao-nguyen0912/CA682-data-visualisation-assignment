@@ -1,0 +1,12 @@
+path = "/content/drive/MyDrive/Colab Notebooks/weather_ireland_Dec2020back"
+all_files = glob.glob(os.path.join(path,"*.csv"))
+
+li = []
+
+for filename in all_files:
+    df = pd.read_csv(filename, index_col=None, header=0)
+    li.append(df)
+
+frame = pd.concat(li, axis=0, ignore_index=True,sort=True)
+
+frame.to_csv('/content/drive/MyDrive/Colab Notebooks/irishWeather_from2010.csv', index=False)

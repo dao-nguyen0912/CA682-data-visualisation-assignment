@@ -1,0 +1,246 @@
+from google.colab import drive
+drive.mount('/content/drive')
+
+
+
+
+
+
+import pandas as pd
+import seaborn as sns
+sns.set()
+import matplotlib.pyplot as plt
+import numpy as np
+import requests
+import pandas as pd
+from dateutil import parser, rrule
+from datetime import datetime, time, date
+import time
+
+
+
+df_ireland = pd.read_csv(r"/content/drive/MyDrive/Colab Notebooks/irishWeather_from2010.csv")
+df_ireland
+
+df_ireland['location'] = df_ireland['location'].str. replace(',Ireland','')
+
+type(df_ireland['date_time'][0])
+df_ireland['date_time'] = pd.to_datetime(df_ireland['date_time'], infer_datetime_format=True)
+type(df_ireland['date_time'][0])
+
+
+df_ireland = df_ireland.set_index('date_time')
+
+
+df_ireland['month_str'] = df_ireland.index.strftime('%b')
+df_ireland['month_num'] = df_ireland.index.month
+df_ireland['year'] = df_ireland.index.year
+df_ireland['day'] = df_ireland.index.day
+df_ireland['hour'] = df_ireland.index.hour
+
+df_ireland
+
+df_ireland_tmp = df_ireland[["hour","day","month_num","month_str","year","tempC", "maxtempC","mintempC","precipMM","sunset","sunrise","location"]]
+
+---------------------TEMPERATURE HEATMAP-----------------------------------
+
+#calculate average temperature by month & Year
+groupDf= df_ireland_tmp.groupby(["month_str","year"], as_index=False).mean()
+months = groupDf.month_str.unique()
+months = ["Jan", "Feb", "Mar", "Apr",
+      "May","Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+groupDf['month_str'] =pd.Categorical(groupDf['month_str'],categories=months, ordered=True)
+groupDf
+
+summary = groupDf.pivot("year", "month_str", "tempC")
+
+
+#Draw heatmap ‘bwr’ to plot in only blue & red
+f, ax = plt.subplots(figsize=(15,8))
+sns.heatmap(summary, annot=True, linewidths=.5, ax=ax ,cmap="bwr")
+plt.title("Temperature in Ireland from 2010 to 2020", fontsize =20)
+plt.xlabel("")
+plt.ylabel("")
+plt.yticks(rotation =45)
+plt.show()
+
+
+
+--------------------SUN and TOURIST PLOT---------------------------------------------------
+
+df_ireland_tmp = df_ireland[["hour","day","month_num","month_str","year","tempC", "maxtempC","mintempC","precipMM","sunset","sunrise","location"]]
+df_ireland_tourist =pd.read_csv(r'/content/drive/MyDrive/Colab Notebooks/ireland_tourists.csv')
+df_ireland_tourist 
+df_ireland_tourist1= df_ireland_tourist.groupby(["Quarter"], as_index=False).mean()
+timePlot =['2020-02-15','2020-05-15','2020-08-15', '2020-11-15']
+df_ireland_tourist1['timePlot'] =timePlot
+df_ireland_tourist1
+
+
+import requests
+import pandas as pd
+from dateutil import parser, rrule
+from datetime import datetime, time, date
+import time
+from dateutil.parser import parse
+
+
+#!/usr/bin/env python
+
+from fileinput import input
+from dateutil.parser import parse
+from datetime import datetime
+import numpy as np
+from matplotlib import pyplot as plt
+import matplotlib.dates as mdates
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+
+# Read in the sunrise and sunset data in CST
+# and convert to floating point hours
+
+
+
+import  math
+def add_time(a, day=None):
+     # Getting useful data from start string
+     timely, midday = a.split()
+     hour, minutes = timely.split(':')
+     hour = int(hour)
+     minutes = int(minutes)
+
+    # Making the clock into 24 hour format
+     if midday == "PM":
+        hour += 12
+     total_minutes_std_hour = int(hour) * 60
+     std_minutes = int(minutes)
+
+
+	# total of hours combined
+     total_minutes = int(total_minutes_std_hour + std_minutes)
+     total_hours = total_minutes / 60
+     return total_hours
+
+
+df_ireland_tmp['sunset1'] = df_ireland_tmp['sunset'].apply(add_time)
+df_ireland_tmp['sunrise1'] = df_ireland_tmp['sunrise'].apply(add_time)
+# Daylight lengths
+lengths = df_ireland_tmp['sunset1'] - df_ireland_tmp['sunrise1']
+df_ireland_tmp['daylight_length'] =lengths
+
+#convert date_time to date
+df_ireland_tmp['datetime'] = df_ireland_tmp.index.date
+df_ireland_tmp
+
+df_ireland_tmp =df_ireland_tmp[['datetime', 'sunset1','sunrise1','daylight_length','month_num','day']]
+
+df_ireland_tmp.duplicated()
+
+df_ireland_tmp =df_ireland_tmp.drop_duplicates()
+df_ireland_tmp
+
+df_ireland_tmp= df_ireland_tmp.groupby(["month_num","day","datetime"], as_index=False).mean()
+df_ireland_tmp
+
+
+day = list( ('2020' + '-' + df_ireland_tmp['month_num'].astype(str) + '-' + df_ireland_tmp['day'].astype(str)).apply(parse)    )
+sunset = list(df_ireland_tmp['sunset1'])
+sunrise = list(df_ireland_tmp['sunrise1'])
+lengths = list(df_ireland_tmp['daylight_length'])
+
+
+day_tourist = list(df_ireland_tourist1['timePlot'].apply(parse))
+tourist =list(df_ireland_tourist1['VALUE'])
+n =list(df_ireland_tourist1['Quarter'])
+
+
+
+import matplotlib.dates as mdates
+import matplotlib.axis 
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+# Get the portion of the year that uses IST
+cdtStart = day.index(datetime(2020, 3, 29))
+cstStart = day.index(datetime(2020, 10, 25))
+cdtdays = day[cdtStart:cstStart]
+cstrises = sunrise[cdtStart:cstStart]
+cdtrises = [ x + 1 for x in cstrises ]
+cstsets = sunset[cdtStart:cstStart]
+cdtsets = [ x + 1 for x in cstsets ]
+
+
+
+
+# Plot the data
+fig, (ax, ax1) =plt.subplots(2,sharex =True, figsize=(15,10))
+ax.fill_between(day, sunrise, sunset, facecolor='yellow', alpha=.5)
+ax.fill_between(day, 0, sunrise, facecolor='black', alpha=.25)
+ax.fill_between(day, sunset, 24, facecolor='black', alpha=.25)
+ax.fill_between(cdtdays, cstsets, cdtsets, facecolor='yellow', alpha=.5)
+ax.fill_between(cdtdays, cdtrises, cstrises, facecolor='black', alpha=.1)
+ax.plot(day, sunrise, color='k')
+ax.plot(day, sunset, color='k')
+ax.plot(cdtdays, cdtrises, color='k')
+ax.plot(cdtdays, cdtsets, color='k')
+ax.plot(day, lengths, color='#aa00aa', linestyle='--', lw=2)
+
+
+
+ax1.set_ylabel('tourist')  # we already handled the x-label with ax1
+#ax1.plot(day_tourist, tourist)
+#ax1.tick_params(axis='y')
+
+fig.tight_layout()  # otherwise the right y-label is slightly clipped
+ax1.plot(day_tourist,tourist,color = 'black', marker ='o', linestyle ='--')  #add tourists
+
+
+# Add annotations
+ax.text(datetime(2020,8,16), 4, 'Sunrise', fontsize=12, color='black', ha='center', rotation=9)
+ax.text(datetime(2020,8,16), 18, 'Sunset', fontsize=12, color='black', ha='center', rotation=-10)
+ax.text(datetime(2020,3,16), 13, 'Daylight', fontsize=12, color='#aa00aa', ha='center', rotation=22)
+
+ax1.text(datetime(2020,2,15), 1700, 'Q1', fontsize=12, color='black', ha='center')
+ax1.text(datetime(2020,5,15), 2600, 'Q2', fontsize=12, color='black', ha='center')
+ax1.text(datetime(2020,8,15), 2900, 'Q3', fontsize=12, color='black', ha='center')
+ax1.text(datetime(2020,11,15), 2100, 'Q4', fontsize=12, color='black', ha='center')
+#ax1.text(datetime(2020,3,15), 2800, 'Overseas Trips in thousands to Ireland by non-residents', fontsize=15, color='black', ha='center')
+
+# Background grids
+ax.grid(linewidth=1, which='major', color='#cccccc', linestyle='-', lw=.5)
+ax.grid(linewidth=1, which='minor', color='#cccccc', linestyle=':', lw=.5)
+
+ax1.grid(linewidth=1, which='major', color='#cccccc', linestyle='-', lw=.5)
+ax1.grid(linewidth=1, which='minor', color='#cccccc', linestyle=':', lw=.5)
+
+# Horizontal axis
+ax.tick_params(axis='both', which='major', labelsize=12)
+plt.xlim(datetime(2020, 1, 1), datetime(2020, 12, 31))
+m = mdates.MonthLocator(bymonthday=1)
+mfmt = mdates.DateFormatter('              %b')
+ax.xaxis.set_major_locator(m)
+ax.xaxis.set_major_formatter(mfmt)
+
+ax1.tick_params(axis='both', which='major', labelsize=12)
+ax1.xaxis.set_major_locator(m)
+ax1.xaxis.set_major_formatter(mfmt)
+
+# Vertical axis
+#plt.ylim(0, 24)
+ax.axis(ymin =0, ymax =24)
+ymajor = MultipleLocator(4)
+yminor = MultipleLocator(1)
+tfmt = FormatStrFormatter('%d:00')
+ax.yaxis.set_major_locator(ymajor)
+ax.yaxis.set_minor_locator(yminor)
+ax.yaxis.set_major_formatter(tfmt)
+
+ax1.axis(ymin =0, ymax =3000)
+
+ax1.set_ylabel('', fontsize =12)
+ax.set_ylabel('', fontsize =12)
+#ax1.set_title ('Daylength and Overseas Trips to Ireland by Non-Residents by periods', fontsize =25)
+ax.set_title ('Daylength and Overseas Trips to Ireland by Non-Residents in thousands', fontsize =25)
+
+# Tighten up the white border and save
+fig.set_tight_layout({'pad': 1.5})
+plt.savefig('riseset.png', format='png', dpi=150)
+
